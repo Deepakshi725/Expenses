@@ -12,6 +12,34 @@ router.get('/signup', (req, res) => {
   });
 });
 
+// POST endpoint for user signup
+router.post('/signup', (req, res) => {
+  const { username, email, password } = req.body;
+  
+  // Basic validation
+  if (!username || !email || !password) {
+    return res.status(400).json({
+      error: 'Missing required fields',
+      message: 'Username, email, and password are required',
+      required: ['username', 'email', 'password']
+    });
+  }
+
+  // Mock response (will be replaced with actual user creation later)
+  res.status(201).json({
+    message: 'User signup successful',
+    method: 'POST',
+    endpoint: '/api/auth/signup',
+    data: {
+      username,
+      email,
+      id: 'mock-user-id-' + Date.now(),
+      createdAt: new Date().toISOString()
+    },
+    status: 'Ready for database integration'
+  });
+});
+
 // GET endpoint for user login page/form
 router.get('/login', (req, res) => {
   res.json({
@@ -20,6 +48,37 @@ router.get('/login', (req, res) => {
     description: 'This endpoint will be used to display login form or get login page',
     endpoint: '/api/auth/login',
     status: 'Ready for implementation'
+  });
+});
+
+// POST endpoint for user login
+router.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  // Basic validation
+  if (!email || !password) {
+    return res.status(400).json({
+      error: 'Missing required fields',
+      message: 'Email and password are required',
+      required: ['email', 'password']
+    });
+  }
+
+  // Mock response (will be replaced with actual authentication later)
+  res.json({
+    message: 'User login successful',
+    method: 'POST',
+    endpoint: '/api/auth/login',
+    data: {
+      email,
+      token: 'mock-jwt-token-' + Date.now(),
+      user: {
+        id: 'mock-user-id',
+        email,
+        username: 'mock-username'
+      }
+    },
+    status: 'Ready for JWT integration'
   });
 });
 
