@@ -93,6 +93,32 @@ router.get('/me', (req, res) => {
   });
 });
 
+// PUT endpoint for updating user info
+router.put('/me', (req, res) => {
+  const { username, email } = req.body;
+
+  // Basic validation
+  if (!username && !email) {
+    return res.status(400).json({
+      error: 'No fields to update',
+      message: 'Provide at least one field (username or email) to update',
+      allowed: ['username', 'email']
+    });
+  }
+
+  // Mock response (will be replaced with actual update logic later)
+  res.json({
+    message: 'User info updated successfully',
+    method: 'PUT',
+    endpoint: '/api/auth/me',
+    updated: {
+      ...(username && { username }),
+      ...(email && { email })
+    },
+    status: 'Ready for database integration'
+  });
+});
+
 // GET endpoint for logout
 router.get('/logout', (req, res) => {
   res.json({
