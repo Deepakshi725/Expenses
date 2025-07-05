@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const User = require('../models/User');
 
 // GET endpoint for user signup page/form
 router.get('/signup', (req, res) => {
@@ -13,31 +14,62 @@ router.get('/signup', (req, res) => {
 });
 
 // POST endpoint for user signup
-router.post('/signup', (req, res) => {
-  const { username, email, password } = req.body;
-  
-  // Basic validation
-  if (!username || !email || !password) {
-    return res.status(400).json({
-      error: 'Missing required fields',
-      message: 'Username, email, and password are required',
-      required: ['username', 'email', 'password']
-    });
-  }
+router.post('/signup', async (req, res) => {
+  try {
+    const { username, email, password, firstName, lastName } = req.body;
+    
+    // Basic validation
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Username, email, and password are required',
+        required: ['username', 'email', 'password']
+      });
+    }
 
-  // Mock response (will be replaced with actual user creation later)
-  res.status(201).json({
-    message: 'User signup successful',
-    method: 'POST',
-    endpoint: '/api/auth/signup',
-    data: {
+    // Check if user already exists
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({
+        error: 'User already exists',
+        message: 'A user with this email already exists'
+      });
+    }
+
+    const existingUsername = await User.findByUsername(username);
+    if (existingUsername) {
+      return res.status(400).json({
+        error: 'Username taken',
+        message: 'This username is already taken'
+      });
+    }
+
+    // Create new user
+    const user = new User({
       username,
       email,
-      id: 'mock-user-id-' + Date.now(),
-      createdAt: new Date().toISOString()
-    },
-    status: 'Ready for database integration'
-  });
+      password,
+      firstName,
+      lastName
+    });
+
+    await user.save();
+
+    // Return user data without password
+    const userProfile = user.getProfile();
+
+    res.status(201).json({
+      message: 'User created successfully',
+      data: userProfile
+    });
+
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: 'Failed to create user'
+    });
+  }
 });
 
 // GET endpoint for user login page/form
@@ -52,34 +84,56 @@ router.get('/login', (req, res) => {
 });
 
 // POST endpoint for user login
-router.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  
-  // Basic validation
-  if (!email || !password) {
-    return res.status(400).json({
-      error: 'Missing required fields',
-      message: 'Email and password are required',
-      required: ['email', 'password']
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Basic validation
+    if (!email || !password) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Email and password are required',
+        required: ['email', 'password']
+      });
+    }
+
+    // Find user by email
+    const user = await User.findByEmail(email);
+    if (!user) {
+      return res.status(401).json({
+        error: 'Invalid credentials',
+        message: 'Email or password is incorrect'
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        error: 'Invalid credentials',
+        message: 'Email or password is incorrect'
+      });
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Return user data without password
+    const userProfile = user.getProfile();
+
+    res.json({
+      message: 'Login successful',
+      data: userProfile
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: 'Failed to login'
     });
   }
-
-  // Mock response (will be replaced with actual authentication later)
-  res.json({
-    message: 'User login successful',
-    method: 'POST',
-    endpoint: '/api/auth/login',
-    data: {
-      email,
-      token: 'mock-jwt-token-' + Date.now(),
-      user: {
-        id: 'mock-user-id',
-        email,
-        username: 'mock-username'
-      }
-    },
-    status: 'Ready for JWT integration'
-  });
 });
 
 // GET endpoint to check if user is authenticated
@@ -94,29 +148,52 @@ router.get('/me', (req, res) => {
 });
 
 // PUT endpoint for updating user info
-router.put('/me', (req, res) => {
-  const { username, email } = req.body;
+router.put('/me', async (req, res) => {
+  try {
+    const { username, email, firstName, lastName } = req.body;
+    const userId = req.params.userId || 'mock-user-id'; // This will be replaced with actual user ID from JWT
 
-  // Basic validation
-  if (!username && !email) {
-    return res.status(400).json({
-      error: 'No fields to update',
-      message: 'Provide at least one field (username or email) to update',
-      allowed: ['username', 'email']
+    // Basic validation
+    if (!username && !email && !firstName && !lastName) {
+      return res.status(400).json({
+        error: 'No fields to update',
+        message: 'Provide at least one field to update',
+        allowed: ['username', 'email', 'firstName', 'lastName']
+      });
+    }
+
+    // Find user (mock implementation - will be replaced with actual user lookup)
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'User does not exist'
+      });
+    }
+
+    // Update fields
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+
+    await user.save();
+
+    // Return updated user data without password
+    const userProfile = user.getProfile();
+
+    res.json({
+      message: 'User updated successfully',
+      data: userProfile
+    });
+
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: 'Failed to update user'
     });
   }
-
-  // Mock response (will be replaced with actual update logic later)
-  res.json({
-    message: 'User info updated successfully',
-    method: 'PUT',
-    endpoint: '/api/auth/me',
-    updated: {
-      ...(username && { username }),
-      ...(email && { email })
-    },
-    status: 'Ready for database integration'
-  });
 });
 
 // GET endpoint for logout
