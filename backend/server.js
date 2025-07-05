@@ -20,6 +20,8 @@ app.get('/', (req, res) => {
 
 // Auth routes
 app.use('/api/auth', require('./routes/auth'));
+// Expenses routes
+app.use('/api/expenses', require('./routes/expenses'));
 
 // Start server
 app.listen(PORT, () => {
