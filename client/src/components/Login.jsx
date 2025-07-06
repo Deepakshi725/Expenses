@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import GoogleAuth from './GoogleAuth';
 
 const Login = ({ onSwitchToSignup, onLogin }) => {
   const [formData, setFormData] = useState({
@@ -35,6 +36,16 @@ const Login = ({ onSwitchToSignup, onLogin }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = (googleData) => {
+    console.log('Google login data:', googleData);
+    // Handle Google login success
+    onLogin();
+  };
+
+  const handleGoogleError = (errorMessage) => {
+    setError(errorMessage);
   };
 
   return (
@@ -163,6 +174,9 @@ const Login = ({ onSwitchToSignup, onLogin }) => {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        {/* Google Authentication */}
+        <GoogleAuth onLogin={handleGoogleLogin} onError={handleGoogleError} />
 
         <div style={{ textAlign: 'center' }}>
           <p style={{
