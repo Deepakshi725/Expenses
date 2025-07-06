@@ -8,6 +8,7 @@ const ExpenseForm = ({ onAddExpense }) => {
     date: '',
     description: ''
   });
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,6 +30,32 @@ const ExpenseForm = ({ onAddExpense }) => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const validFiles = files.filter(file => {
+      const isValidType = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'].includes(file.type);
+      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB limit
+      
+      if (!isValidType) {
+        alert(`File ${file.name} is not a supported type. Please upload JPEG, PNG, GIF, or PDF files.`);
+        return false;
+      }
+      
+      if (!isValidSize) {
+        alert(`File ${file.name} is too large. Please upload files smaller than 5MB.`);
+        return false;
+      }
+      
+      return true;
+    });
+
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -66,7 +93,14 @@ const ExpenseForm = ({ onAddExpense }) => {
         ...formData,
         amount: parseFloat(formData.amount),
         id: Date.now(), // Simple ID generation
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        attachments: uploadedFiles.map(file => ({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          // In a real app, you'd upload to server and get URL
+          url: URL.createObjectURL(file)
+        }))
       };
 
       // TODO: Implement actual API call to save expense
@@ -86,6 +120,7 @@ const ExpenseForm = ({ onAddExpense }) => {
         date: '',
         description: ''
       });
+      setUploadedFiles([]);
       
       console.log('Expense added successfully');
     } catch (err) {
@@ -251,7 +286,7 @@ const ExpenseForm = ({ onAddExpense }) => {
           </select>
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '16px' }}>
           <label style={{
             display: 'block',
             marginBottom: '8px',
@@ -280,6 +315,116 @@ const ExpenseForm = ({ onAddExpense }) => {
             placeholder="Add any additional details about this expense..."
           />
         </div>
+
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{
+            display: 'block',
+            marginBottom: '8px',
+            color: '#333',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Upload Bills/Receipts (Optional)
+          </label>
+          <div style={{
+            border: '2px dashed #e2e8f0',
+            borderRadius: '8px',
+            padding: '20px',
+            textAlign: 'center',
+            background: '#f8fafc',
+            transition: 'border-color 0.2s'
+          }}>
+            <input
+              type="file"
+              multiple
+              accept="image/*,.pdf"
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
+              id="file-upload"
+            />
+            <label
+              htmlFor="file-upload"
+              style={{
+                cursor: 'pointer',
+                color: '#667eea',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              📎 Click to upload files (JPEG, PNG, GIF, PDF - max 5MB each)
+            </label>
+            <p style={{
+              color: '#64748b',
+              fontSize: '12px',
+              margin: '8px 0 0 0'
+            }}>
+              Drag and drop files here or click to browse
+            </p>
+          </div>
+        </div>
+
+        {uploadedFiles.length > 0 && (
+          <div style={{ marginBottom: '24px' }}>
+            <h4 style={{
+              color: '#333',
+              fontSize: '14px',
+              fontWeight: '600',
+              marginBottom: '12px'
+            }}>
+              Uploaded Files ({uploadedFiles.length})
+            </h4>
+            <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+              {uploadedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px 12px',
+                    background: '#f1f5f9',
+                    borderRadius: '6px',
+                    marginBottom: '8px'
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <p style={{
+                      color: '#333',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      margin: '0 0 2px 0'
+                    }}>
+                      {file.name}
+                    </p>
+                    <p style={{
+                      color: '#64748b',
+                      fontSize: '12px',
+                      margin: '0'
+                    }}>
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    style={{
+                      background: '#fee',
+                      color: '#dc2626',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      marginLeft: '8px'
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <button
           type="submit"

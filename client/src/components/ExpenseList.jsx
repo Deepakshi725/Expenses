@@ -50,6 +50,15 @@ const ExpenseList = ({ expenses, onDeleteExpense }) => {
     return colors[category] || '#6B7280';
   };
 
+  const getFileIcon = (fileType) => {
+    if (fileType.startsWith('image/')) {
+      return '🖼️';
+    } else if (fileType === 'application/pdf') {
+      return '📄';
+    }
+    return '📎';
+  };
+
   const filteredAndSortedExpenses = expenses
     .filter(expense => 
       filterCategory === '' || filterCategory === 'All Categories' || expense.category === filterCategory
@@ -237,6 +246,55 @@ const ExpenseList = ({ expenses, onDeleteExpense }) => {
                     }}>
                       {expense.description}
                     </p>
+                  )}
+                  
+                  {/* Display attachments */}
+                  {expense.attachments && expense.attachments.length > 0 && (
+                    <div style={{ marginTop: '12px' }}>
+                      <p style={{
+                        color: '#64748b',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        margin: '0 0 8px 0'
+                      }}>
+                        📎 Attachments ({expense.attachments.length})
+                      </p>
+                      <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px'
+                      }}>
+                        {expense.attachments.map((file, index) => (
+                          <div
+                            key={index}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 10px',
+                              background: '#f1f5f9',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              color: '#64748b',
+                              border: '1px solid #e2e8f0'
+                            }}
+                          >
+                            <span>{getFileIcon(file.type)}</span>
+                            <span style={{
+                              maxWidth: '120px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {file.name}
+                            </span>
+                            <span style={{ fontSize: '10px' }}>
+                              ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
                 <div style={{
